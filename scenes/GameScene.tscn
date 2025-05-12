@@ -1,7 +1,8 @@
 [gd_scene load_steps=6 format=3 uid="uid://xtqh8vg67enw"]
 
 [ext_resource type="Script" uid="uid://djdfsufwh4uw6" path="res://scripts/GameScene.gd" id="1_4k4m3"]
-[ext_resource type="Script" uid="uid://xber0aac4r3x" path="res://scripts/Player.gd" id="2_5k4m3"]
+[ext_resource type="PackedScene" uid="uid://dbet4qpcfrgxv" path="res://scenes/Player.tscn" id="2_ejfnb"]
+[ext_resource type="PackedScene" uid="uid://cvwbv7qkrd14h" path="res://scenes/HealthBar.tscn" id="3_qqo4m"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_1"]
 size = Vector2(1280, 20)
@@ -9,10 +10,8 @@ size = Vector2(1280, 20)
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_2"]
 size = Vector2(20, 720)
 
-[sub_resource type="CircleShape2D" id="CircleShape2D_1"]
-radius = 20.0
-
 [node name="GameScene" type="Node2D"]
+scale = Vector2(0.901378, 0.901378)
 script = ExtResource("1_4k4m3")
 
 [node name="Background" type="ColorRect" parent="."]
@@ -48,48 +47,26 @@ shape = SubResource("RectangleShape2D_2")
 
 [node name="Players" type="Node2D" parent="."]
 
-[node name="Player1" type="CharacterBody2D" parent="Players"]
-position = Vector2(320, 360)
-script = ExtResource("2_5k4m3")
+[node name="Player1" parent="Players" instance=ExtResource("2_ejfnb")]
+visible = false
+position = Vector2(120, 360)
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="Players/Player1"]
-shape = SubResource("CircleShape2D_1")
-
-[node name="ColorRect" type="ColorRect" parent="Players/Player1"]
-offset_left = -20.0
-offset_top = -20.0
-offset_right = 20.0
-offset_bottom = 20.0
-color = Color(1, 0, 0, 1)
-
-[node name="Player2" type="CharacterBody2D" parent="Players"]
-position = Vector2(960, 360)
-script = ExtResource("2_5k4m3")
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="Players/Player2"]
-shape = SubResource("CircleShape2D_1")
-
-[node name="ColorRect" type="ColorRect" parent="Players/Player2"]
-offset_left = -20.0
-offset_top = -20.0
-offset_right = 20.0
-offset_bottom = 20.0
-color = Color(0, 0, 1, 1)
-
-[node name="UI" type="CanvasLayer" parent="."]
+[node name="UI" type="Node2D" parent="."]
 
 [node name="HealthBars" type="Node2D" parent="UI"]
+position = Vector2(0, 10)
 
-[node name="Player1Health" type="ProgressBar" parent="UI/HealthBars"]
+[node name="Player1Health" parent="UI/HealthBars" instance=ExtResource("3_qqo4m")]
+visible = false
 offset_left = 20.0
-offset_top = 20.0
+offset_top = 10.0
 offset_right = 220.0
-offset_bottom = 40.0
-value = 100.0
+offset_bottom = 50.0
 
-[node name="Player2Health" type="ProgressBar" parent="UI/HealthBars"]
-offset_left = 1060.0
-offset_top = 20.0
-offset_right = 1260.0
-offset_bottom = 40.0
-value = 100.0
+[node name="Title" type="Label" parent="UI"]
+offset_left = 487.8
+offset_top = 21.1875
+offset_right = 747.8
+offset_bottom = 47.1875
+text = "StickStrike - Multiplayer"
+horizontal_alignment = 1

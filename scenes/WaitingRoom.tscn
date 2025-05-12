@@ -1,0 +1,70 @@
+[gd_scene load_steps=3 format=3 uid="uid://ddaibt8immg3j"]
+
+[ext_resource type="Script" uid="uid://cng67uyyyvpjk" path="res://scripts/WaitingRoom.gd" id="1_jmves"]
+
+[sub_resource type="LabelSettings" id="LabelSettings_jmves"]
+font_size = 32
+
+[node name="WaitingRoom" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_jmves")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.0784314, 0.0784314, 0.0784314, 1)
+
+[node name="VBoxContainer" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -250.0
+offset_top = -250.0
+offset_right = 250.0
+offset_bottom = 250.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 20
+
+[node name="Title" type="Label" parent="VBoxContainer"]
+layout_mode = 2
+text = "Waiting Room"
+label_settings = SubResource("LabelSettings_jmves")
+horizontal_alignment = 1
+
+[node name="RoomNameLabel" type="Label" parent="VBoxContainer"]
+layout_mode = 2
+text = "Room: Loading..."
+horizontal_alignment = 1
+
+[node name="WaitingLabel" type="Label" parent="VBoxContainer"]
+layout_mode = 2
+text = "Waiting for players... (1/2)"
+horizontal_alignment = 1
+
+[node name="PlayerListLabel" type="Label" parent="VBoxContainer"]
+layout_mode = 2
+text = "Players in Room:"
+horizontal_alignment = 1
+
+[node name="PlayerList" type="ItemList" parent="VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+auto_height = true
+
+[node name="InfoLabel" type="Label" parent="VBoxContainer"]
+layout_mode = 2
+text = "Game will start automatically when 2 players join"
+horizontal_alignment = 1

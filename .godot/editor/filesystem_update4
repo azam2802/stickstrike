@@ -1,3 +1,9 @@
-res://scenes/MainMenu.tscn
-res://scenes/RoomList.tscn
+res://scenes/WaitingRoom.tscn
+res://scripts/GameScene.gd
+res://scripts/Player.gd
+res://scripts/MainMenu.gd
+res://scripts/NetworkManager.gd
+res://scripts/RoomList.gd
+res://scripts/room_list.gd
 res://scenes/GameScene.tscn
+res://scripts/WaitingRoom.gd

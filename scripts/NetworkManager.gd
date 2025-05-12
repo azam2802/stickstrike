@@ -5,6 +5,7 @@ var client = WebSocketPeer.new()
 var player_id = ""
 var connected = false
 var current_room = null
+var connect_timer = 0.0  # Manual timer for connection
 
 signal game_state_updated(state)
 signal connection_established
@@ -17,11 +18,25 @@ signal game_started(room, players)
 signal error_received(message)
 
 func _ready():
-	print("NetworkManager initialized")
-	# In Godot 4, we don't connect signals directly to WebSocketPeer
-	# Instead we poll its state in _process
+	print("NetworkManager initialized as singleton")
+	# Ensure we're not trying to connect while the scene is being set up
+	if Engine.is_editor_hint():
+		return
+		
+	# Set process mode to always to prevent pausing
+	process_mode = Node.PROCESS_MODE_ALWAYS
+	
+	# Set timer to connect after a short delay
+	connect_timer = 0.5
 
 func _process(delta):
+	# Handle connection timer
+	if connect_timer > 0:
+		connect_timer -= delta
+		if connect_timer <= 0 and !connected:
+			connect_to_server()
+	
+	# Handle WebSocket state
 	var state = client.get_ready_state()
 	
 	if state == WebSocketPeer.STATE_OPEN:
