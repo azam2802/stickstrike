@@ -120,12 +120,14 @@ func _setup_ui():
 	if ui_initialized:
 		return
 		
+	print("GameScene: Setting up UI")
+		
 	# Создаем контейнер для UI
 	var ui = Node2D.new()
 	ui.name = "UI"
 	add_child(ui)
 	
-	# Создаем контейнер для полосок здоровья
+	# Создаем контейнер для полосок здоровья - completely empty
 	var health_bars = Node2D.new()
 	health_bars.name = "HealthBars"
 	ui.add_child(health_bars)
@@ -137,15 +139,18 @@ func _setup_ui():
 	title.position = Vector2(520, 20)
 	ui.add_child(title)
 	
-	# Загружаем шаблон полоски здоровья
-	var health_bar_scene = load("res://scenes/HealthBar.tscn")
-	var template = health_bar_scene.instantiate()
-	template.name = "Player1Health"
-	health_bars.add_child(template)
-	template.visible = false  # Скрываем шаблон
-	
 	ui_initialized = true
-	
+
+# Helper function to clear all health bars
+func _clear_health_bars():
+	var ui = get_node_or_null("UI")
+	if ui:
+		var health_bars = ui.get_node_or_null("HealthBars")
+		if health_bars:
+			print("GameScene: Clearing all health bars")
+			for child in health_bars.get_children():
+				child.queue_free()
+
 func _setup_players():
 	if players_container_initialized:
 		return
@@ -157,20 +162,13 @@ func _setup_players():
 		player_nodes[player_id].queue_free()
 	player_nodes.clear()
 	
-	# Загружаем шаблон игрока
-	var player_scene = load("res://scenes/Player.tscn")
+	# Create empty Players container (without template)
 	var players_container = Node2D.new()
 	players_container.name = "Players"
 	add_child(players_container)
 	
-	# Создаем шаблон игрока
-	var player_template = player_scene.instantiate()
-	player_template.name = "Player1"
-	players_container.add_child(player_template)
-	player_template.visible = false  # Скрываем шаблон
-	
 	players_container_initialized = true
-	
+
 func _process(delta):
 	# Обновление UI
 	_update_health_bars()
@@ -182,14 +180,14 @@ func _update_health_bars():
 		var player = player_nodes[player_id]
 		var health_bar = get_node_or_null("UI/HealthBars/" + player_id + "Health")
 		if health_bar and player:
-			var progress_bar = health_bar.get_node("PlayerHealth")
+			var progress_bar = health_bar.get_node_or_null("PlayerHealth")
 			if progress_bar:
 				progress_bar.value = player.health
 				
-			# Update HP label
+			# Update HP label with the exact health value
 			var hp_label = health_bar.get_node_or_null("HPLabel")
 			if hp_label:
-				hp_label.text = str(player.health)
+				hp_label.text = str(int(player.health))  # Ensure it's an integer
 
 func _update_debug_info():
 	var debug_text = "Room: "
@@ -244,6 +242,12 @@ func _create_player(player_id, player_data = null):
 			health_bars.name = "HealthBars"
 			ui.add_child(health_bars)
 	
+	# Remove any existing health bar for this player
+	var existing_health_bar = health_bars.get_node_or_null(player_id + "Health")
+	if existing_health_bar:
+		print("GameScene: Removing existing health bar for player ", player_id)
+		existing_health_bar.queue_free()
+	
 	# Создаем нового игрока на основе шаблона
 	var player_scene = load("res://scenes/Player.tscn")
 	var new_player = player_scene.instantiate()
@@ -255,13 +259,6 @@ func _create_player(player_id, player_data = null):
 	var is_local = player_id == local_player_id
 	var color = Color.RED if is_local else Color.BLUE
 	new_player.get_node("ColorRect").color = color
-	
-	# Настраиваем полосу здоровья
-	var health_bar_scene = load("res://scenes/HealthBar.tscn")
-	var new_health_bar = health_bar_scene.instantiate()
-	new_health_bar.name = player_id + "Health"
-	new_health_bar.visible = true
-	health_bars.add_child(new_health_bar)
 	
 	# Определяем начальную позицию игрока на основе сохраненной стороны
 	var spawn_position
@@ -277,8 +274,37 @@ func _create_player(player_id, player_data = null):
 		health_bar_position = Vector2(1000, 50)
 		print("GameScene: Player ", player_id, " spawning on RIGHT side at ", spawn_position)
 	
-	# Устанавливаем позицию полоски здоровья
-	new_health_bar.position = health_bar_position
+	# Create health bar from scratch
+	var health_bar = Control.new()
+	health_bar.name = player_id + "Health"
+	health_bar.position = health_bar_position
+	health_bars.add_child(health_bar)
+	
+	# Create health bar background
+	var bg = ColorRect.new()
+	bg.size = Vector2(200, 30)
+	bg.color = Color(0.2, 0.2, 0.2, 0.8)
+	health_bar.add_child(bg)
+	
+	# Create progress bar
+	var progress_bar = ProgressBar.new()
+	progress_bar.name = "PlayerHealth"
+	progress_bar.min_value = 0
+	progress_bar.max_value = 100
+	progress_bar.value = 100
+	progress_bar.size = Vector2(200, 30)
+	progress_bar.show_percentage = false  # Hide the built-in percentage display
+	health_bar.add_child(progress_bar)
+	
+	# Create HP label
+	var hp_label = Label.new()
+	hp_label.name = "HPLabel"
+	hp_label.text = "100"
+	hp_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	hp_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	hp_label.position = Vector2(75, 0)
+	hp_label.size = Vector2(50, 30)
+	health_bar.add_child(hp_label)
 	
 	# Если позиция была указана в данных с сервера, используем её
 	if player_data and player_data.has("position"):
@@ -291,7 +317,7 @@ func _create_player(player_id, player_data = null):
 	print("GameScene: Player ", player_id, " position set to ", new_player.global_position)
 	
 	# Настройка сетевого взаимодействия
-	new_player.setup(player_id, new_health_bar.get_node("PlayerHealth"), network_manager, is_local)
+	new_player.setup(player_id, progress_bar, network_manager, is_local)
 	print("GameScene: Игрок ", player_id, " настроен, локальный: ", is_local)
 	
 	# Обновляем данные игрока, если они предоставлены
@@ -306,6 +332,10 @@ func _create_player(player_id, player_data = null):
 
 func _on_game_state_updated(state):
 	print("GameScene: Обновление состояния игры: ", state)
+	
+	# If this is the first update, clear all health bars to ensure a clean state
+	if state.has("players") and player_nodes.size() == 0:
+		_clear_health_bars()
 	
 	# Обновляем состояние игры на основе данных с сервера
 	if state.has("players"):
@@ -354,6 +384,27 @@ func _on_game_state_updated(state):
 				if player_data.has("position") and player_id != local_player_id and not player.is_local_player:
 					var pos = player_data.position
 					player.global_position = Vector2(pos.x, pos.y)
+	
+	# Remove players that don't exist in the updated state
+	var to_remove = []
+	for player_id in player_nodes:
+		if not state.has("players") or not player_id in state.players:
+			to_remove.append(player_id)
+	
+	for player_id in to_remove:
+		print("GameScene: Removing player: ", player_id)
+		if player_nodes[player_id]:
+			player_nodes[player_id].queue_free()
+		player_nodes.erase(player_id)
+		
+		# Also remove their health bar
+		var ui = get_node_or_null("UI")
+		if ui:
+			var health_bars = ui.get_node_or_null("HealthBars")
+			if health_bars:
+				var health_bar = health_bars.get_node_or_null(player_id + "Health")
+				if health_bar:
+					health_bar.queue_free()
 					
 	# Обновляем отладочную информацию
 	_update_debug_info() 

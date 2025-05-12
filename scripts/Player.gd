@@ -46,7 +46,7 @@ func setup(id, health_bar_ref, network_mgr, is_local = false):
 		# Update HP label
 		var hp_label = health_bar.get_parent().get_node_or_null("HPLabel")
 		if hp_label:
-			hp_label.text = str(health)
+			hp_label.text = str(int(health))  # Ensure it's an integer
 	
 	# Устанавливаем имя игрока
 	if is_local:
@@ -141,7 +141,7 @@ func take_damage(amount, attacker_position = null):
 		# Update HP label
 		var hp_label = health_bar.get_parent().get_node_or_null("HPLabel")
 		if hp_label:
-			hp_label.text = str(health)
+			hp_label.text = str(int(health))  # Ensure it's an integer
 	
 	# Применяем отбрасывание
 	if attacker_position != null:

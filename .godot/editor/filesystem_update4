@@ -7,3 +7,4 @@ res://scripts/RoomList.gd
 res://scripts/room_list.gd
 res://scenes/GameScene.tscn
 res://scripts/WaitingRoom.gd
+res://scenes/HealthBar.tscn

@@ -12,13 +12,12 @@ grow_vertical = 2
 layout_mode = 0
 offset_right = 200.0
 offset_bottom = 27.0
-value = 100.0
 
 [node name="HPLabel" type="Label" parent="."]
 layout_mode = 0
 offset_left = 85.0
 offset_right = 125.0
 offset_bottom = 26.0
-text = "100"
+scale = Vector2(1.02534, 1)
 horizontal_alignment = 1
 vertical_alignment = 1
