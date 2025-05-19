@@ -1,0 +1,49 @@
+[gd_scene load_steps=4 format=3 uid="uid://c7w1xfx5h2eqq"]
+
+[ext_resource type="Script" path="res://scripts/Joystick.gd" id="1_xvx2p"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_1"]
+radius = 100.0
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_2"]
+radius = 50.0
+
+[node name="Joystick" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_xvx2p")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 0
+offset_right = 200.0
+offset_bottom = 200.0
+color = Color(0.2, 0.2, 0.2, 0.4)
+
+[node name="OuterCircle" type="Panel" parent="."]
+modulate = Color(1, 1, 1, 0.5)
+layout_mode = 0
+offset_right = 200.0
+offset_bottom = 200.0
+
+[node name="InnerCircle" type="Panel" parent="."]
+modulate = Color(0.2, 0.7, 1, 0.8)
+layout_mode = 0
+offset_left = 75.0
+offset_top = 75.0
+offset_right = 125.0
+offset_bottom = 125.0
+
+[node name="TouchScreenButton" type="TouchScreenButton" parent="."]
+position = Vector2(100, 100)
+shape = SubResource("CircleShape2D_1")
+
+[node name="KnobArea" type="TouchScreenButton" parent="."]
+position = Vector2(100, 100)
+shape = SubResource("CircleShape2D_2")
+
+[connection signal="pressed" from="TouchScreenButton" to="." method="_on_touch_screen_button_pressed"]
+[connection signal="released" from="TouchScreenButton" to="." method="_on_touch_screen_button_released"] 

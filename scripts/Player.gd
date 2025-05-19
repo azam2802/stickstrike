@@ -1,183 +1,55 @@
-extends CharacterBody2D
+extends Node2D
 
-# Настройки игрока
+var power = 50
 var health = 100
-var max_health = 100
-var damage = 10
-var knockback_force = 400.0
 var is_local_player = false
 var player_id = ""
-var player_name = ""
-var last_collision_time = 0
-var collision_cooldown = 0.5 # Секунды между ударами
-var hit_effect_active = false
+var health_bar = null
+var network_manager = null
 
-# Ссылки на UI элементы
-var health_bar
-var network_manager
-var name_label
+# Joystick input
+var joystick_axis = 0.0
+var joystick_strength = 0.0
+
+# Debug label for mobile testing
+var debug_label = null
 
 func _ready():
-	print("Player: Инициализация игрока: ", player_id)
-	
-	# Ensure visibility
-	visible = true
-	
-	# Создаем метку с именем игрока
-	name_label = Label.new()
-	name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	name_label.position = Vector2(-50, -40)  # Размещаем над игроком
-	name_label.size = Vector2(100, 20)
-	add_child(name_label)
+	# Create a debug label for mobile testing
+	if OS.get_name() == "Android" or OS.get_name() == "iOS" or true: # Always show for testing
+		debug_label = Label.new()
+		debug_label.position = Vector2(0, -50)
+		debug_label.modulate = Color.GREEN
+		add_child(debug_label)
 
-func setup(id, health_bar_ref, network_mgr, is_local = false):
-	self.player_id = id
-	self.is_local_player = is_local
-	health_bar = health_bar_ref
-	network_manager = network_mgr
-	health = max_health
-	
-	# Make sure player is visible
-	visible = true
-	
-	# Update health bar
-	if health_bar:
-		health_bar.value = health
-		# Update HP label
-		var hp_label = health_bar.get_parent().get_node_or_null("HPLabel")
-		if hp_label:
-			hp_label.text = str(int(health))  # Ensure it's an integer
-	
-	# Устанавливаем имя игрока
-	if is_local:
-		player_name = "You (Player " + id.substr(0, 4) + ")"
-	else:
-		player_name = "Player " + id.substr(0, 4)
-	
-	# Обновляем метку с именем
-	if name_label:
-		name_label.text = player_name
-	
-	print("Player: Настройка игрока ", id, ", локальный: ", is_local)
-
-func _process(delta):
-	# Debug visibility check
-	if not visible:
-		visible = true
-		print("Player: Fixed visibility for ", player_id)
+func setup(id, health_progress_bar, net_manager, local_player):
+	player_id = id
+	health_bar = health_progress_bar
+	network_manager = net_manager
+	is_local_player = local_player
+	health = 100
 
 func _physics_process(delta):
 	if is_local_player:
-		# Получаем ввод только для локального игрока
-		var input_vector = Vector2.ZERO
-		input_vector.x = Input.get_axis("ui_left", "ui_right")
-		input_vector.y = Input.get_axis("ui_up", "ui_down")
+		# Handle keyboard input for desktop
+		var keyboard_axis = Input.get_action_strength("ui_right") - Input.get_action_strength("ui_left")
 		
-		# Debug movement info
-		if input_vector != Vector2.ZERO:
-			print("Player: Movement input detected: ", input_vector)
+		# Use joystick input if available, otherwise use keyboard
+		var movement_axis = joystick_axis if abs(joystick_axis) > 0.1 else keyboard_axis
 		
-		input_vector = input_vector.normalized()
+		# Apply movement force
+		if abs(movement_axis) > 0.1:
+			$Torso.apply_impulse(Vector2.ZERO, Vector2.RIGHT * movement_axis * power)
 		
-		# Применяем движение с повышенной скоростью для лучшей отзывчивости
-		if input_vector != Vector2.ZERO:
-			velocity = input_vector * 500.0  # Increased speed for better responsiveness
-		else:
-			velocity = velocity.move_toward(Vector2.ZERO, 2000.0 * delta)  # Faster deceleration
+		# Send position update to server if we're connected
+		if network_manager and network_manager.connected:
+			network_manager.send_position(global_position, Vector2.ZERO)
 		
-		# Actually move the character
-		var previous_position = global_position
-		move_and_slide()
-		var has_moved = previous_position != global_position
-		
-		if has_moved:
-			print("Player: Moved to position: ", global_position)
-		
-		# Отправляем позицию на сервер только если игрок двигается
-		if network_manager and network_manager.connected and (has_moved or velocity.length() > 0.1):
-			network_manager.send_position(global_position, velocity)
-	
-	# Проверяем столкновения только для локального игрока
-	if is_local_player:
-		for i in get_slide_collision_count():
-			var collision = get_slide_collision(i)
-			var collider = collision.get_collider()
-			if collider is CharacterBody2D and collider.has_method("get_player_id"):
-				_handle_player_collision(collider)
+		# Update debug label
+		if debug_label:
+			debug_label.text = "Joy: %.2f\nStrength: %.2f" % [joystick_axis, joystick_strength]
 
-func _handle_player_collision(other_player):
-	# Проверяем кулдаун между ударами
-	var current_time = Time.get_ticks_msec() / 1000.0
-	if current_time - last_collision_time < collision_cooldown:
-		return
-		
-	last_collision_time = current_time
-	
-	# Отправляем информацию об ударе на сервер
-	if network_manager and network_manager.connected and other_player.has_method("get_player_id"):
-		var target_id = other_player.get_player_id()
-		print("Player: Удар по игроку ", target_id)
-		network_manager.send_hit(target_id, other_player.global_position)
-		
-		# Показываем визуальный эффект удара
-		_show_hit_effect()
-		
-		# Применяем локальный визуальный эффект удара
-		other_player.take_damage(damage, global_position)
-
-func get_player_id():
-	return player_id
-
-func get_player_name():
-	return player_name
-
-func take_damage(amount, attacker_position = null):
-	print("Player: Получен урон ", amount, " игроком ", player_id)
-	health = max(0, health - amount)
-	
-	# Обновляем полоску здоровья
-	if health_bar:
-		health_bar.value = health
-		# Update HP label
-		var hp_label = health_bar.get_parent().get_node_or_null("HPLabel")
-		if hp_label:
-			hp_label.text = str(int(health))  # Ensure it's an integer
-	
-	# Применяем отбрасывание
-	if attacker_position != null:
-		var knockback_direction = (global_position - attacker_position).normalized()
-		velocity = knockback_direction * knockback_force
-		print("Player: Применено отбрасывание в направлении ", knockback_direction)
-	
-	# Показываем визуальный эффект получения урона
-	_show_damage_effect()
-	
-	# Сообщаем о смерти, если здоровье закончилось
-	if health <= 0:
-		_on_death()
-
-func _show_hit_effect():
-	# Создаем вспышку при ударе
-	modulate = Color.YELLOW
-	var tween = create_tween()
-	tween.tween_property(self, "modulate", Color.WHITE, 0.2)
-
-func _show_damage_effect():
-	# Эффект получения урона (мигание красным)
-	if not hit_effect_active:
-		hit_effect_active = true
-		modulate = Color.RED
-		var tween = create_tween()
-		tween.tween_property(self, "modulate", Color.WHITE, 0.3)
-		tween.tween_callback(func(): hit_effect_active = false)
-
-func _on_death():
-	print("Player: Игрок ", player_id, " погиб")
-	# Временная реализация - просто восстанавливаем здоровье
-	health = max_health
-	# Визуальный эффект смерти
-	modulate = Color.WHITE
-	var tween = create_tween()
-	tween.tween_property(self, "modulate", Color.RED, 0.2)
-	tween.tween_property(self, "modulate", Color.BLACK, 0.2)
-	tween.tween_property(self, "modulate", Color.WHITE, 0.2) 
+# Set joystick input from mobile controls
+func set_joystick_input(axis, strength):
+	joystick_axis = axis
+	joystick_strength = strength

@@ -19,6 +19,10 @@ var player_positions = {}
 var ui_initialized = false
 var players_container_initialized = false
 
+# Mobile control variables
+var joystick_direction = Vector2.ZERO
+var joystick_strength = 0.0
+
 func _ready():
 	print("GameScene: Инициализация игровой сцены")
 	
@@ -49,6 +53,11 @@ func _ready():
 	
 	# Ждем один кадр для инициализации NetworkManager
 	await get_tree().process_frame
+	
+	# Connect joystick signal
+	var joystick = get_node_or_null("MobileControls/Joystick")
+	if joystick:
+		joystick.joystick_moved.connect(_on_joystick_moved)
 	
 	# Создаем UI для здоровья игроков
 	_setup_ui()
@@ -257,8 +266,6 @@ func _create_player(player_id, player_data = null):
 	
 	# Настраиваем игрока
 	var is_local = player_id == local_player_id
-	var color = Color.RED if is_local else Color.BLUE
-	new_player.get_node("ColorRect").color = color
 	
 	# Определяем начальную позицию игрока на основе сохраненной стороны
 	var spawn_position
@@ -408,3 +415,11 @@ func _on_game_state_updated(state):
 					
 	# Обновляем отладочную информацию
 	_update_debug_info() 
+
+# Handle joystick movement
+func _on_joystick_moved(direction, strength):
+	# Update local player movement based on joystick
+	if local_player_id != "" and player_nodes.has(local_player_id):
+		var local_player = player_nodes[local_player_id]
+		if local_player:
+			local_player.set_joystick_input(direction.x, strength)
